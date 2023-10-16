@@ -29,20 +29,310 @@
 - [Soal 19](#soal-19)
 - [Soal 20](#soal-20)
 
+### Topologi
+![Topologi](/images/Topologi/05.png)
+
 ### Soal 1
-Yudhistira akan digunakan sebagai DNS Master, Werkudara sebagai DNS Slave, Arjuna merupakan Load Balancer yang terdiri dari beberapa Web Server yaitu Prabakusuma, Abimanyu, dan Wisanggeni. Buatlah topologinya sesuai dengan gambar topologi 5
+Yudhistira akan digunakan sebagai DNS Master, Werkudara sebagai DNS Slave, Arjuna merupakan Load Balancer yang terdiri dari beberapa Web Server yaitu Prabakusuma, Abimanyu, dan Wisanggeni. Buatlah topologinya sesuai dengan gambar topologi diatas
+
+![Soal 1](/images/Soal%201/topologi.png)
+
+#### Konfigurasi:
+- **Pandudewanata**
+  ```
+    auto eth0
+    iface eth0 inet dhcp
+
+    auto eth1
+    iface eth1 inet static
+        address 10.4.1.1
+        netmask 255.255.255.0
+
+    auto eth2
+    iface eth2 inet static
+        address 10.4.2.1
+        netmask 255.255.255.0
+
+    auto eth3
+    iface eth3 inet static
+        address 10.4.3.1
+        netmask 255.255.255.0
+  ```
+- **Nakula**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.1.2
+        netmask 255.255.255.0
+        gateway 10.4.1.1
+  ```
+- **Sadewa**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.1.3
+        netmask 255.255.255.0
+        gateway 10.4.1.1
+  ```
+- **Yudhistira**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.2.2
+        netmask 255.255.255.0
+        gateway 10.4.2.1
+  ```
+- **Werkudara**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.2.3
+        netmask 255.255.255.0
+        gateway 10.4.2.1
+  ```
+- **Prabukusuma**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.3.2
+        netmask 255.255.255.0
+        gateway 10.4.3.1
+  ```
+- **Abimanyu**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.3.3
+        netmask 255.255.255.0
+        gateway 10.4.3.1
+  ```
+- **Wisanggeni**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.3.4
+        netmask 255.255.255.0
+        gateway 10.4.3.1
+  ```
+- **Arjuna**
+  ```
+    auto eth0
+    iface eth0 inet static
+        address 10.4.3.5
+        netmask 255.255.255.0
+        gateway 10.4.3.1
+  ```
+- **Servers Summary**
+  ```
+  Pandudewanata	: 10.4.1.1 (Switch 1)
+  Nakula	        : 10.4.1.2
+  Sadewa	        : 10.4.1.3
+  Pandudewanata	: 10.4.2.1 (Switch 2)
+  Yudhistira	: 10.4.2.2
+  Werkudara	: 10.4.2.3
+  Pandudewanata	: 10.4.3.1 (Switch 3)
+  Prabukusuma	: 10.4.3.2
+  Abimanyu	: 10.4.3.3
+  Wisanggeni	: 10.4.3.4
+  Arjuna	        : 10.4.3.5
+  ```
+
+#### Inisiasi ``.bashrc``
+
+- **Pandudewanata**
+  ```
+  iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 10.4.0.0/16
+  cat /etc/resolv.conf
+  echo 'nameserver 192.168.122.1' > /etc/resolv.conf
+  ```
+- **Master & Slave**
+  ```
+  echo 'nameserver 192.168.122.1' > /etc/resolv.conf
+  apt-get update
+  apt-get install bind9 -y      
+  ```
+- **Client**
+  ```
+  echo -e '
+  nameserver 10.4.2.2 # IP Yudhistira
+  nameserver 10.4.2.3 # IP Werkudara
+  nameserver 192.168.122.1
+  ' > /etc/resolv.conf
+  apt-get update
+  apt-get install dnsutils -y
+  ```
 
 ### Soal 2
 Buatlah website utama pada node arjuna dengan akses ke arjuna.yyy.com dengan alias www.arjuna.yyy.com dengan yyy merupakan kode kelompok.
 
+#### Script
+
+Setup file `/etc/bind9/named.conf.local` dan `/etc/bind/jarkom/arjuna.A10.com` 
+
+**DNS Master (Yudhistira)**
+```
+echo 'zone "arjuna.A10.com" {
+        type master;
+        file "/etc/bind/jarkom/arjuna.A10.com";
+        allow-transfer { 10.4.3.5; }; // IP Arjuna
+};' > /etc/bind9/named.conf.local
+
+mkdir /etc/bind/jarkom
+
+cp /etc/bind/db.local /etc/bind/jarkom/arjuna.A10.com
+
+echo '
+;
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     arjuna.A10.com. root.arjuna.A10.com. (
+                        2023101201      ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      arjuna.A10.com.
+@       IN      A       10.4.2.2     ; IP Yudhistira
+www     IN      CNAME   arjuna.A10.com.' > /etc/bind/jarkom/arjuna.A10.com
+
+service bind9 restart
+```
+
+#### Test Ping
+
+![Soal 2](/images/Soal%202/No2.png)
+
 ### Soal 3
 Dengan cara yang sama seperti soal nomor 2, buatlah website utama dengan akses ke abimanyu.yyy.com dan alias www.abimanyu.yyy.com.
+
+#### Script
+
+Menambahkan konfigurasi abimanyu.A10.com pada file `/etc/bind9/named.conf.local` dan melakukan setup pada file `/etc/bind/jarkom/abimanyu.A10.com` 
+
+**DNS Master (Yudhistira)**
+```
+echo 'zone "arjuna.A10.com" {
+        type master;
+        file "/etc/bind/jarkom/arjuna.A10.com";
+        allow-transfer { 10.4.3.5; }; // IP Arjuna
+};
+
+zone "abimanyu.A10.com" {
+        type master;
+        file "/etc/bind/jarkom/abimanyu.A10.com";
+        allow-transfer { 10.4.3.3; }; // IP Abimanyu
+};' > /etc/bind/named.conf.local
+
+cp /etc/bind/db.local /etc/bind/jarkom/abimanyu.A10.com
+
+echo '
+;
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     abimanyu.A10.com. root.abimanyu.A10.com. (
+                        2023101201      ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      abimanyu.A10.com.
+@       IN      A       10.4.2.2     ; IP Yudhistira
+www     IN      CNAME   abimanyu.A10.com.' > /etc/bind/jarkom/abimanyu.A10.com
+
+service bind9 restart
+```
+#### Test Ping
+
+![Soal 3](/images/Soal%203/No3.png)
 
 ### Soal 4
 Kemudian, karena terdapat beberapa web yang harus di-deploy, buatlah subdomain parikesit.abimanyu.yyy.com yang diatur DNS-nya di Yudhistira dan mengarah ke Abimanyu.
 
+#### Script
+
+Menambahkan line `parikesit IN    A       10.4.3.3     ; IP Abimanyu ` pada `/etc/bind/jarkom/abimanyu.A10.com` untuk membuat subdomain parikesit.abimanyu.A10.com
+
+**DNS Master (Yudhistira)**
+```
+echo '
+;
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     abimanyu.A10.com. root.abimanyu.A10.com. (
+                        2023101201      ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      abimanyu.A10.com.
+@       IN      A       10.4.2.2     ; IP Yudhistira
+www     IN      CNAME   abimanyu.A10.com.
+parikesit IN    A       10.4.3.3     ; IP Abimanyu' > /etc/bind/jarkom/abimanyu.A10.com
+
+service bind9 restart
+```
+
+#### Test Ping
+
+![Soal 4](/images/Soal%204/No4.png)
+
 ### Soal 5
 Buat juga reverse domain untuk domain utama. (Abimanyu saja yang direverse)
+
+#### Script
+
+Sebelum melakukan reverse domain dari Abimanyu, kita perlu untuk membalik IPnya. IP Abimanyu adalah 10.4.3.3 sehingga setelah dibalik menjadi 3.3.4.10.
+
+Kemudian, kita menambahkan konfigurasi 3.4.10.in-addr.arpa pada file `/etc/bind9/named.conf.local` dan melakukan setup pada file `/etc/bind/jarkom/3.4.10.in-addr.arpa` 
+
+**DNS Master (Yudhistira)**
+```
+echo 'zone "arjuna.A10.com" {
+        type master;
+        file "/etc/bind/jarkom/arjuna.A10.com";
+        allow-transfer { 10.4.3.5; }; // IP Arjuna
+};
+
+zone "abimanyu.A10.com" {
+        type master;
+        file "/etc/bind/jarkom/abimanyu.A10.com";
+        allow-transfer { 10.4.3.3; }; // IP Abimanyu
+};
+
+zone "3.4.10.in-addr.arpa" {
+        type master;
+        file "/etc/bind/jarkom/3.4.10.in-addr.arpa";
+};' > /etc/bind/named.conf.local
+
+cp /etc/bind/db.local /etc/bind/jarkom/3.4.10.in-addr.arpa
+
+echo ';
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     abimanyu.A10.com. root.abimanyu.A10.com. (
+                        2003101201      ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+3.4.10.in-addr.arpa. IN      NS      abimanyu.A10.com.
+3                       IN      PTR     abimanyu.A10.com.
+5                       IN      PTR     arjuna.A10.com.' > /etc/bind/jarkom/3.4.10.in-addr.arpa
+
+service bind9 restart
+```
+
+#### Testing
+
+![Soal 5](/images/Soal%205/No5.png)
 
 ### Soal 6
 Agar dapat tetap dihubungi ketika DNS Server Yudhistira bermasalah, buat juga Werkudara sebagai DNS Slave untuk domain utama.
