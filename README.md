@@ -538,14 +538,165 @@ service bind9 restart
 ### Soal 9
 Arjuna merupakan suatu Load Balancer Nginx dengan tiga worker (yang juga menggunakan nginx sebagai webserver) yaitu Prabakusuma, Abimanyu, dan Wisanggeni. Lakukan deployment pada masing-masing worker.
 
+#### Script
+Untuk ketiga nginx worker ditambahkan konfigurasi pada file `/etc/nginx/sites-available/jarkom`. Dan untuk load balancer ditambahkan juga konfigurasi pada file `/etc/nginx/sites-available/lb-jarkom`.
+
+**Nginx Worker ( Prabakusuma, Abimanyu, dan Wisanggeni )**
+
+```
+ server {
+
+ 	listen 80;
+
+ 	root /var/www/jarkom;
+
+ 	index index.php index.html index.htm;
+ 	server_name _;
+
+ 	location / {
+ 			try_files $uri $uri/ /index.php?$query_string;
+ 	}
+
+ 	# pass PHP scripts to FastCGI server
+ 	location ~ \.php$ {
+ 	include snippets/fastcgi-php.conf;
+ 	fastcgi_pass unix:/var/run/php/php7.2-fpm.sock;
+ 	}
+
+ location ~ /\.ht {
+ 			deny all;
+ 	}
+
+ 	error_log /var/log/nginx/jarkom_error.log;
+ 	access_log /var/log/nginx/jarkom_access.log;
+ }
+```
+
+Membuat `symnlink` dan restart `nginx`
+```
+ln -s /etc/nginx/sites-available/jarkom /etc/nginx/sites-enabled
+
+service nginx restart
+```
+
+**Load Balancer Nginx ( Arjuna )**
+```
+ # Default menggunakan Round Robin
+upstream backend {
+  server 10.4.3.2; # IP PrabaKusuma
+  server 10.4.3.3; # IP Abimanyu
+  server 10.4.3.4; # IP Wisanggeni
+}
+
+server {
+  listen 80;
+  server_name arjuna.A10.com www.arjuna.A10.com;
+
+  location / {
+    proxy_pass http://backend;
+  }
+}
+```
+
+Membuat `symnlink`
+```
+ln -s /etc/nginx/sites-available/lb-jarkom /etc/nginx/sites-enabled
+```
+
+#### Test Lynx
+
+Lakukan testing pada client `Nakula` atau `Sadewa`
+```
+lynx http://10.4.3.2
+lynx http://10.4.3.3
+lynx http://10.4.3.4
+```
+
+- Pada ip 10.4.3.2
+
+  ![Soal 9](/images/Soal%209/2.jpg)
+
+- Pada ip 10.4.3.3
+
+  ![Soal 9](/images/Soal%209/1.jpg)
+
+- Pada ip 10.4.3.4
+
+  ![Soal 9](/images/Soal%209/3.jpg)
+
 ### Soal 10
 Kemudian gunakan algoritma Round Robin untuk Load Balancer pada Arjuna. Gunakan server_name pada soal nomor 1. Untuk melakukan pengecekan akses alamat web tersebut kemudian pastikan worker yang digunakan untuk menangani permintaan akan berganti ganti secara acak. Untuk webserver di masing-masing worker wajib berjalan di port 8001-8003. Contoh
     - Prabakusuma:8001
     - Abimanyu:8002
     - Wisanggeni:8003
 
+#### Script
+Lakukan update konfigurasi untuk ketiga nginx worker pada file `/etc/nginx/sites-available/jarkom`, dan untuk load balancer pada file `/etc/nginx/sites-available/lb-jarkom`.
+
+**Nginx Worker ( Prabakusuma, Abimanyu, dan Wisanggeni )**
+```
+ server {
+
+ 	listen [port masing masing worker];
+
+ 	root /var/www/jarkom;
+
+ 	index index.php index.html index.htm;
+ 	server_name _;
+
+ 	location / {
+ 			try_files $uri $uri/ /index.php?$query_string;
+ 	}
+
+ 	# pass PHP scripts to FastCGI server
+ 	location ~ \.php$ {
+ 	include snippets/fastcgi-php.conf;
+ 	fastcgi_pass unix:/var/run/php/php7.2-fpm.sock;
+ 	}
+
+ location ~ /\.ht {
+ 			deny all;
+ 	}
+
+ 	error_log /var/log/nginx/jarkom_error.log;
+ 	access_log /var/log/nginx/jarkom_access.log;
+ }
+```
+
+**Load Balancer Nginx ( Arjuna )**
+```
+upstream backend {
+  server 10.4.3.2:8001; # IP PrabaKusuma
+  server 10.4.3.3:8002; # IP Abimanyu
+  server 10.4.3.4:8003; # IP Wisanggeni
+}
+```
+
+#### Test Lynx
+
+Lakukan testing pada client `Nakula` atau `Sadewa`
+```
+lynx http://10.4.3.2:8001
+lynx http://10.4.3.3:8002
+lynx http://10.4.3.4:8003
+```
+
+- Pada port 8001
+
+  ![Soal 10](/images/Soal%2010/1.jpg)
+
+- Pada port 8002
+
+  ![Soal 10](/images/Soal%2010/2.jpg)
+
+- Pada port 8003
+
+  ![Soal 10](/images/Soal%2010/3.jpg)
+
 ### Soal 11
 Selain menggunakan Nginx, lakukan konfigurasi Apache Web Server pada worker Abimanyu dengan web server www.abimanyu.yyy.com. Pertama dibutuhkan web server dengan DocumentRoot pada /var/www/abimanyu.yyy
+
+
 
 ### Soal 12
 Setelah itu ubahlah agar url www.abimanyu.yyy.com/index.php/home menjadi www.abimanyu.yyy.com/home.
