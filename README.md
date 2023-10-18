@@ -137,7 +137,7 @@ Yudhistira akan digunakan sebagai DNS Master, Werkudara sebagai DNS Slave, Arjun
   Arjuna	        : 10.4.3.5
   ```
 
-#### Inisiasi ``.bashrc``
+#### Inisiasi
 
 - **Pandudewanata**
   ```
@@ -160,6 +160,50 @@ Yudhistira akan digunakan sebagai DNS Master, Werkudara sebagai DNS Slave, Arjun
   ' > /etc/resolv.conf
   apt-get update
   apt-get install dnsutils -y
+  ```
+
+- **Nginx Config**
+  ```
+  apt install nginx php php-fpm -y
+  ```
+
+- **Apache2 Config**
+  ```
+  apt-get update
+  apt-get install dnsutils -y
+  apt-get install lynx -y
+  apt-get install nginx -y
+  service nginx start
+  apt-get install apache2 -y
+  apt-get install libapache2-mod-php7.2 -y
+  service apache2 start
+  apt-get install wget -y
+  apt-get install unzip -y
+  apt-get install php -y
+  echo -e "\n\nPHP Version:"
+  php -v
+  ```
+
+- **Download Zip and Unzip**
+  ```
+  wget -O '/var/www/abimanyu.A10.com' 'https://     drive.usercontent.google.com/download?id=1a4V23hwK9S7hQEDEcv9FL14UkkrHc-Zc'
+  unzip -o /var/www/abimanyu.A10.com -d /var/www/
+  mv /var/www/abimanyu.yyy.com /var/www/abimanyu.A10
+  rm /var/www/abimanyu.A10.com
+  rm -rf /var/www/abimanyu.yyy.com
+
+  wget -O '/var/www/parikesit.abimanyu.A10.com' 'https://drive.usercontent.google.com/download?id=1LdbYntiYVF_NVNgJis1GLCLPEGyIOreS'
+  unzip -o /var/www/parikesit.abimanyu.A10.com -d /var/www/
+  mv /var/www/parikesit.abimanyu.yyy.com /var/www/parikesit.abimanyu.A10
+  rm /var/www/parikesit.abimanyu.A10.com
+  rm -rf /var/www/parikesit.abimanyu.yyy.com
+  mkdir /var/www/parikesit.abimanyu.A10/secret
+
+  wget -O '/var/www/rjp.baratayuda.abimanyu.A10.com' 'https://drive.usercontent.google.com/download?id=1pPSP7yIR05JhSFG67RVzgkb-VcW9vQO6'
+  unzip -o /var/www/rjp.baratayuda.abimanyu.A10.com -d /var/www/
+  mv /var/www/rjp.baratayuda.abimanyu.yyy.com /var/www/rjp.baratayuda.abimanyu.A10
+  rm /var/www/rjp.baratayuda.abimanyu.A10.com
+  rm -rf /var/www/rjp.baratayuda.abimanyu.yyy.com
   ```
 
 ### Soal 2
@@ -696,16 +740,169 @@ lynx http://10.4.3.4:8003
 ### Soal 11
 Selain menggunakan Nginx, lakukan konfigurasi Apache Web Server pada worker Abimanyu dengan web server www.abimanyu.yyy.com. Pertama dibutuhkan web server dengan DocumentRoot pada /var/www/abimanyu.yyy
 
+#### Script
+Pertama kita perlu melakukan inisiasi Apache Web Server. Setelah itu kita akan melakukan konfigurasi pada node Yudhistira dan node Abimanyu
 
+**Yudhistira**
+```
+echo ';
+; BIND data file for local loopback interface
+;
+$TTL    604800
+@       IN      SOA     abimanyu.A10.com. root.abimanyu.A10.com. (
+                        2023101001      ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      abimanyu.A10.com.
+@       IN      A       10.4.3.3     ; IP Abimanyu
+www     IN      CNAME   abimanyu.A10.com.
+parikesit IN    A       10.4.3.3     ; IP Abimanyu
+ns1     IN      A       10.4.2.3     ; IP Werkudara
+baratayuda IN   NS      ns1' > /etc/bind/jarkom/abimanyu.A10.com
+
+service bind9 restart
+```
+
+**Abimanyu**
+```
+cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/abimanyu.A10.com.conf
+
+rm /etc/apache2/sites-available/000-default.conf
+
+echo '<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/abimanyu.A10
+
+  ServerName abimanyu.A10.com
+  ServerAlias www.abimanyu.A10.com
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/abimanyu.A10.com.conf
+
+a2ensite abimanyu.A10.com.conf
+
+service apache2 restart
+```
+
+#### Test Lynx
+```
+lynx abimanyu.A10.com
+```
+
+![Soal 11](/images/Soal%2011/No11.jpg)
 
 ### Soal 12
 Setelah itu ubahlah agar url www.abimanyu.yyy.com/index.php/home menjadi www.abimanyu.yyy.com/home.
 
+#### Script
+
+**Abimanyu**
+```
+echo '<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/abimanyu.A10
+  ServerName abimanyu.A10.com
+  ServerAlias www.abimanyu.A10.com
+
+  <Directory /var/www/abimanyu.A10/index.php/home>
+          Options +Indexes
+  </Directory>
+
+  Alias "/home" "/var/www/abimanyu.A10/index.php/home"
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/abimanyu.A10.com.conf
+
+service apache2 restart
+```
+
+#### Test Lynx dan Curl
+```
+lynx abimanyu.A10.com/home
+curl abimanyu.A10.com/home
+```
+![Soal 12](/images/Soal%2012/No12.jpg)
+
 ### Soal 13
 Selain itu, pada subdomain www.parikesit.abimanyu.yyy.com, DocumentRoot disimpan pada /var/www/parikesit.abimanyu.yyy
 
+#### Script
+
+Setup ServerName dan ServerAlias
+
+**Abimanyu**
+```
+echo '<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/parikesit.abimanyu.A10
+  ServerName parikesit.abimanyu.A10.com
+  ServerAlias www.parikesit.abimanyu.A10.com
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/parikesit.abimanyu.A10.com.conf
+
+a2ensite parikesit.abimanyu.A10.com.conf
+
+service apache2 restart
+```
+#### Test Lynx dan Curl
+```
+lynx parikesit.abimanyu.A10.com
+curl parikesit.abimanyu.A10.com
+```
+
+![Soal 13](/images/Soal%2013/No13.png)
+
+![Soal 13](/images/Soal%2013/No13Curl.png)
+
 ### Soal 14
 Pada subdomain tersebut folder /public hanya dapat melakukan directory listing sedangkan pada folder /secret tidak dapat diakses (403 Forbidden).
+
+#### Script
+
+Setup menggunakan `Option +Indexes` dan `Option -Indexes` agar dapat melakukan directory listing
+
+**Abimanyu**
+```
+echo '<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/parikesit.abimanyu.A10
+  ServerName parikesit.abimanyu.A10.com
+  ServerAlias www.parikesit.abimanyu.A10.com
+
+  <Directory /var/www/parikesit.abimanyu.A10/public>
+          Options +Indexes
+  </Directory>
+
+  <Directory /var/www/parikesit.abimanyu.A10/secret>
+          Options -Indexes
+  </Directory>
+
+  Alias "/public" "/var/www/parikesit.abimanyu.A10/public"
+  Alias "/secret" "/var/www/parikesit.abimanyu.A10/secret"
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/parikesit.abimanyu.A10.com.conf
+
+service apache2 restart
+```
+
+#### Test Lynx
+```
+lynx parikesit.abimanyu.A10.com/public
+lynx parikesit.abimanyu.A10.com/secret
+```
+
+![Soal 14](/images/Soal%2014/No14Public.png)
+
+![Soal 14](/images/Soal%2014/No14Secret.png)
 
 ### Soal 15
 Buatlah kustomisasi halaman error pada folder /error untuk mengganti error kode pada Apache. Error kode yang perlu diganti adalah 404 Not Found dan 403 Forbidden.
@@ -940,3 +1137,68 @@ lynx 10.4.3.3
 
 ### Soal 20
 Karena website www.parikesit.abimanyu.yyy.com semakin banyak pengunjung dan banyak gambar gambar random, maka ubahlah request gambar yang memiliki substring “abimanyu” akan diarahkan menuju abimanyu.png.
+
+#### Script
+
+**Abimanyu**
+
+Menjalankan `a2enmod rewrite` untuk melakukan rewrite modul
+
+Rewrite terhadap directory `parikesit.abimanyu.A10`
+```
+echo 'RewriteEngine On
+RewriteCond %{REQUEST_URI} ^/public/images/(.*)(abimanyu)(.*\.(png|jpg))
+RewriteCond %{REQUEST_URI} !/public/images/abimanyu.png
+RewriteRule abimanyu http://parikesit.abimanyu.A10.com/public/images/abimanyu.png$1 [L,R=301]' > /var/www/parikesit.abimanyu.A10/.htaccess
+```
+
+Menggunakan `AllowOverrida All`` untuk mengkonfigurasi dengan .hstaccess
+
+```
+echo '<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/parikesit.abimanyu.A10
+
+  ServerName parikesit.abimanyu.A10.com
+  ServerAlias www.parikesit.abimanyu.A10.com
+
+  <Directory /var/www/parikesit.abimanyu.A10/public>
+          Options +Indexes
+  </Directory>
+
+  <Directory /var/www/parikesit.abimanyu.A10/secret>
+          Options -Indexes
+  </Directory>
+
+  <Directory /var/www/parikesit.abimanyu.A10>
+          Options +FollowSymLinks -Multiviews
+          AllowOverride All
+  </Directory>
+
+  Alias "/public" "/var/www/parikesit.abimanyu.A10/public"
+  Alias "/secret" "/var/www/parikesit.abimanyu.A10/secret"
+  Alias "/js" "/var/www/parikesit.abimanyu.A10/public/js"
+
+  ErrorDocument 404 /error/404.html
+  ErrorDocument 403 /error/403.html
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/parikesit.abimanyu.A10.com.conf
+
+service apache2 restart
+```
+
+#### Test Lynx
+```
+lynx parikesit.abimanyu.A10.com/public/images/not-abimanyu.png
+lynx parikesit.abimanyu.A10.com/public/images/abimanyu-student.jpg
+lynx parikesit.abimanyu.A10.com/public/images/abimanyu.png
+lynx parikesit.abimanyu.A10.com/public/images/notabimanyujustmuseum.177013
+```
+
+![Soal 20](/images/Soal%2020/No20.png)
+
+![Soal 20](/images/Soal%2020/No20(1).png)
+
+
