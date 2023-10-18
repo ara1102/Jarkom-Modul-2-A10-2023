@@ -710,18 +710,233 @@ Pada subdomain tersebut folder /public hanya dapat melakukan directory listing s
 ### Soal 15
 Buatlah kustomisasi halaman error pada folder /error untuk mengganti error kode pada Apache. Error kode yang perlu diganti adalah 404 Not Found dan 403 Forbidden.
 
+#### Script
+Lakukan update konfigurasi pada file `/etc/apache2/sites-available/parikesit.abimanyu.A10.com.conf`
+
+**Abimanyu**
+```
+echo '<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/parikesit.abimanyu.A10
+  ServerName parikesit.abimanyu.A10.com
+  ServerAlias www.parikesit.abimanyu.A10.com
+
+  <Directory /var/www/parikesit.abimanyu.A10/public>
+          Options +Indexes
+  </Directory>
+
+  <Directory /var/www/parikesit.abimanyu.A10/secret>
+          Options -Indexes
+  </Directory>
+
+  Alias "/public" "/var/www/parikesit.abimanyu.A10/public"
+  Alias "/secret" "/var/www/parikesit.abimanyu.A10/secret"
+
+  ErrorDocument 404 /error/404.html
+  ErrorDocument 403 /error/403.html
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/parikesit.abimanyu.A10.com.conf
+
+service apache2 restart
+```
+
+#### Test Lynx
+
+Lakukan testing pada client `Nakula` atau `Sadewa`
+```
+lynx parikesit.abimanyu.A10.com/testerror
+lynx parikesit.abimanyu.A10.com/secret
+```
+
+- 404 Not Found
+
+  ![Soal 15](/images/Soal%2015/1.jpg)
+
+  ![Soal 15](/images/Soal%2015/2.jpg)
+
+- 403 Forbidden
+
+  ![Soal 15](/images/Soal%2015/3.jpg)
+
+  ![Soal 15](/images/Soal%2015/4.jpg)
+
 ### Soal 16
 Buatlah suatu konfigurasi virtual host agar file asset www.parikesit.abimanyu.yyy.com/public/js menjadi 
 www.parikesit.abimanyu.yyy.com/js 
 
+#### Script
+Lakukan update konfigurasi pada file `/etc/apache2/sites-available/parikesit.abimanyu.A10.com.conf` agar file asset `/var/www/parikesit.abimanyu.A10/public/js` 
+
+**Abimanyu**
+```
+echo '<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/parikesit.abimanyu.A10
+  ServerName parikesit.abimanyu.A10.com
+  ServerAlias www.parikesit.abimanyu.A10.com
+
+  <Directory /var/www/parikesit.abimanyu.A10/public>
+          Options +Indexes
+  </Directory>
+
+  <Directory /var/www/parikesit.abimanyu.A10/secret>
+          Options -Indexes
+  </Directory>
+
+  Alias "/public" "/var/www/parikesit.abimanyu.A10/public"
+  Alias "/secret" "/var/www/parikesit.abimanyu.A10/secret"
+  Alias "/js" "/var/www/parikesit.abimanyu.A10/public/js"
+
+  ErrorDocument 404 /error/404.html
+  ErrorDocument 403 /error/403.html
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/parikesit.abimanyu.A10.com.conf
+```
+
+#### Test Lynx
+
+Lakukan testing pada client `Nakula` atau `Sadewa`
+```
+lynx parikesit.abimanyu.A10.com/js
+```
+
+![Soal 16](/images/Soal%2016/1.jpg)
+
 ### Soal 17
 Agar aman, buatlah konfigurasi agar www.rjp.baratayuda.abimanyu.yyy.com hanya dapat diakses melalui port 14000 dan 14400.
+
+#### Script
+Lakukan update konfigurasi pada file `/etc/apache2/sites-available/rjp.baratayuda.abimanyu.A10.com.conf`
+
+**Abimanyu**
+```
+echo -e '<VirtualHost *:14000 *:14400>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/rjp.baratayuda.abimanyu.A10
+  ServerName rjp.baratayuda.abimanyu.A10.com
+  ServerAlias www.rjp.baratayuda.abimanyu.A10.com
+
+  ErrorDocument 404 /error/404.html
+  ErrorDocument 403 /error/403.html
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/rjp.baratayuda.abimanyu.A10.com.conf
+
+a2ensite rjp.baratayuda.abimanyu.A10.com.conf
+
+service apache2 restart
+```
+
+#### Test Lynx
+
+Lakukan testing pada client `Nakula` atau `Sadewa`
+```
+lynx rjp.baratayuda.abimanyu.A10.com:14000
+lynx rjp.baratayuda.abimanyu.A10.com:14400
+```
+
+- Port 14000
+
+  ![Soal 17](/images/Soal%2017/1.jpg)
+
+- Port 14400
+
+  ![Soal 17](/images/Soal%2017/2.jpg)
+
+- Port 14444 ( Port selain 14000 & 14400 )
+
+  ![Soal 17](/images/Soal%2017/3.jpg)
 
 ### Soal 18
 Untuk mengaksesnya buatlah autentikasi username berupa “Wayang” dan password “baratayudayyy” dengan yyy merupakan kode kelompok. Letakkan DocumentRoot pada /var/www/rjp.baratayuda.abimanyu.yyy.
 
+#### Script
+Lakukan update konfigurasi pada file `/etc/apache2/sites-available/rjp.baratayuda.abimanyu.A10.com.conf`. Untuk melakukan autentikasi pada server tersebut, kita memerlukan `AuthType` dan Require `Valid-User`.
+
+**Abimanyu**
+```
+echo -e '<VirtualHost *:14000 *:14400>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/rjp.baratayuda.abimanyu.A10
+  ServerName rjp.baratayuda.abimanyu.A10.com
+  ServerAlias www.rjp.baratayuda.abimanyu.A10.com
+
+  <Directory /var/www/rjp.baratayuda.abimanyu.A10>
+          AuthType Basic
+          AuthName "Restricted Content"
+          AuthUserFile /etc/apache2/.htpasswd
+          Require valid-user
+  </Directory>
+
+  ErrorDocument 404 /error/404.html
+  ErrorDocument 403 /error/403.html
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/rjp.baratayuda.abimanyu.A10.com.conf
+
+a2ensite rjp.baratayuda.abimanyu.A10.com.conf
+
+service apache2 restart
+```
+
+- Menjalankan command berikut untuk menginisiasi username dan password.
+```
+htpasswd -c -b /etc/apache2/.htpasswd Wayang baratayudaA10
+```
+
+#### Test Lynx
+
+Lakukan testing pada client `Nakula` atau `Sadewa`
+```
+lynx rjp.baratayuda.abimanyu.A10.com:14000
+lynx rjp.baratayuda.abimanyu.A10.com:14400
+```
+
+![Soal 18](/images/Soal%2018/1.jpg)
+
+![Soal 18](/images/Soal%2018/2.jpg)
+
+
 ### Soal 19
 Buatlah agar setiap kali mengakses IP dari Abimanyu akan secara otomatis dialihkan ke www.abimanyu.yyy.com (alias)
+
+#### Script
+Lakukan update konfigurasi pada file `/etc/apache2/sites-available/000-default.conf`
+
+**Abimanyu**
+```
+echo -e '<VirtualHost *:14000 *:14400>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/rjp.baratayuda.abimanyu.A10
+  ServerName rjp.baratayuda.abimanyu.A10.com
+  ServerAlias www.rjp.baratayuda.abimanyu.A10.com
+
+  ErrorDocument 404 /error/404.html
+  ErrorDocument 403 /error/403.html
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>' > /etc/apache2/sites-available/rjp.baratayuda.abimanyu.A10.com.conf
+
+apache2ctl configtest
+
+service apache2 restart
+```
+
+#### Test Lynx
+
+Lakukan testing pada client `Nakula` atau `Sadewa`
+```
+lynx 10.4.3.3
+```
+
+![Soal 19](/images/Soal%2019/1.jpg)
 
 ### Soal 20
 Karena website www.parikesit.abimanyu.yyy.com semakin banyak pengunjung dan banyak gambar gambar random, maka ubahlah request gambar yang memiliki substring “abimanyu” akan diarahkan menuju abimanyu.png.
